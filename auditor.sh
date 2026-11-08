@@ -52,7 +52,6 @@ else
     echo "[OK] Swap utilization is nominal."
 fi
 
-cat << 'EOF' >> auditor.sh
 
 # --- MODULE 3: CPU & LOAD AVERAGE ---
 echo -e "\n[*] Auditing CPU Load Average..."
@@ -78,4 +77,29 @@ elif [ "$LOAD_PCT" -ge 85 ]; then
 else
     echo "[OK] CPU workload is nominal."
 fi
-EOF
+
+
+
+# --- MODULE 4: NETWORK ATTACK SURFACE (LISTENING PORTS) ---
+echo -e "\n[*] Auditing Network Attack Surface (Listening Sockets)..."
+
+# Total listening sockets (suppressing header with -H)
+TOTAL_LISTEN=$(ss -H -tuln | wc -l)
+
+# Extract listening sockets bound to all interfaces (0.0.0.0, *, or [::])
+EXPOSED_COUNT=$(ss -H -tuln | awk '$5 ~ /^(0\.0\.0\.0|\*|\[::\]):/ {count++} END {print count+0}')
+
+echo "Total Listening Sockets:  ${TOTAL_LISTEN}"
+echo "Public/Wildcard Binds:    ${EXPOSED_COUNT}"
+
+# Evaluate Attack Surface Exposure
+if [ "$EXPOSED_COUNT" -ge 4 ]; then
+    echo "[CRITICAL] High attack surface detected! Multiple services listening on external interfaces."
+    ss -H -tuln | awk '$5 ~ /^(0\.0\.0\.0|\*|\[::\]):/ {printf "  -> Protocol: %-4s | Endpoint: %s\n", $1, $5}'
+elif [ "$EXPOSED_COUNT" -ge 1 ]; then
+    echo "[WARNING] Non-loopback listening services detected."
+    ss -H -tuln | awk '$5 ~ /^(0\.0\.0\.0|\*|\[::\]):/ {printf "  -> Protocol: %-4s | Endpoint: %s\n", $1, $5}'
+else
+    echo "[OK] No public-facing listening sockets. Attack surface is minimal."
+fi
+

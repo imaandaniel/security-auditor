@@ -50,3 +50,14 @@ An automated, modular Bash auditing tool developed on Ubuntu 26.04.1 LTS to moni
   - Warning: `>= 85%` normalized load capacity.
   - Critical: `>= 150%` normalized load capacity.
 - **Failure Risks**: Identifies Denial-of-Service attacks, runaway background tasks, cryptominers, fork bombs, and severe process scheduling latency.
+
+### Module 4: Network Attack Surface (Listening Ports)
+- **Telemetry Source**: `ss -H -tuln` parsed via `awk`.
+- **Parsing Strategy**:
+  - Uses `ss -H` to suppress table headers.
+  - Uses regex filtering on field 5 (`$5 ~ /^(0\.0\.0\.0|\*|\[::\]):/`) to differentiate safe loopback interfaces (`127.0.0.1` / `::1`) from wildcard network bindings.
+- **Thresholds**:
+  - Nominal (`[OK]`): `0` wildcard-bound listening sockets.
+  - Warning (`[WARNING]`): `1 - 3` wildcard-bound listening sockets (common for local discovery services like mDNS).
+  - Critical (`[CRITICAL]`): `>= 4` wildcard-bound listening sockets.
+- **Failure Risks**: Detects exposed backdoors, unauthenticated services, unauthorized daemons, and misconfigured servers binding directly to public network interfaces.
