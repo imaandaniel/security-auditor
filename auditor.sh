@@ -51,3 +51,31 @@ elif [ "$SWAP_USED_PCT" -ge 50 ]; then
 else
     echo "[OK] Swap utilization is nominal."
 fi
+
+cat << 'EOF' >> auditor.sh
+
+# --- MODULE 3: CPU & LOAD AVERAGE ---
+echo -e "\n[*] Auditing CPU Load Average..."
+
+# Detect available cores and load averages
+CPU_CORES=$(nproc)
+LOAD_1MIN=$(awk '{print $1}' /proc/loadavg)
+LOAD_5MIN=$(awk '{print $2}' /proc/loadavg)
+LOAD_15MIN=$(awk '{print $3}' /proc/loadavg)
+
+# Calculate normalized 1-minute load percentage
+LOAD_PCT=$(awk -v cores="$CPU_CORES" '{printf "%.0f", ($1 / cores) * 100}' /proc/loadavg)
+
+echo "CPU Cores:           ${CPU_CORES}"
+echo "Load Avg (1/5/15m):  ${LOAD_1MIN}, ${LOAD_5MIN}, ${LOAD_15MIN}"
+echo "Normalized Load (1m): ${LOAD_PCT}%"
+
+# Evaluate CPU Pressure
+if [ "$LOAD_PCT" -ge 150 ]; then
+    echo "[CRITICAL] CPU saturated (${LOAD_PCT}% load capacity)! High queueing detected."
+elif [ "$LOAD_PCT" -ge 85 ]; then
+    echo "[WARNING] Heavy CPU utilization (${LOAD_PCT}% load capacity)."
+else
+    echo "[OK] CPU workload is nominal."
+fi
+EOF

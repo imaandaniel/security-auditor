@@ -40,3 +40,13 @@ An automated, modular Bash auditing tool developed on Ubuntu 26.04.1 LTS to moni
   - RAM Available: Warning at `<= 20%`, Critical at `<= 10%`.
   - Swap Used: Warning at `>= 50%`, Critical at `>= 80%`.
 - **Failure Risks**: Guards against memory leaks, Denial-of-Service resource exhaustion, disk thrashing, and abrupt application terminations triggered by the Linux OOM Killer.
+
+### Module 3: CPU & Load Average
+- **Telemetry Source**: `/proc/loadavg` and `nproc` parsed via `awk`.
+- **Parsing Strategy**: 
+  - Extracts 1-minute, 5-minute, and 15-minute load averages.
+  - Normalizes the 1-minute load against detected CPU cores (`$1 / cores * 100`) to ensure thresholds function consistently across single-core and multi-core architectures.
+- **Thresholds**:
+  - Warning: `>= 85%` normalized load capacity.
+  - Critical: `>= 150%` normalized load capacity.
+- **Failure Risks**: Identifies Denial-of-Service attacks, runaway background tasks, cryptominers, fork bombs, and severe process scheduling latency.
